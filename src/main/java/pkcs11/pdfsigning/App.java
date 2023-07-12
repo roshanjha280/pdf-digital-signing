@@ -2,12 +2,9 @@ package pkcs11.pdfsigning;
 
 import sun.security.pkcs11.SunPKCS11;
 import sun.security.pkcs11.wrapper.CK_C_INITIALIZE_ARGS;
-import sun.security.pkcs11.wrapper.CK_INFO;
 import sun.security.pkcs11.wrapper.CK_TOKEN_INFO;
 import sun.security.pkcs11.wrapper.PKCS11;
-import sun.security.pkcs11.wrapper.PKCS11Exception;
 
-//import com.cdac.pkcs11.wrapper.PKCS11;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.StampingProperties;
@@ -28,12 +25,10 @@ import com.itextpdf.signatures.TSAClientBouncyCastle;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.KeyStore.Builder;
 import java.security.KeyStore.CallbackHandlerProtection;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -43,36 +38,30 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
+import java.util.Scanner;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-
-public class App 
-{
-	
-	public static final String DEST = "E:/user_data/workspace/usb/trustoken/pdf/";
-
-    public static final String SRC = "E:/user_data/workspace/usb/trustoken/pdf/mydoc.pdf";
+public class App {
 
     public static final String[] RESULT_FILES = new String[] {
             "signed_using_token.pdf"
     };
     
-    //public static SunPKCS11 P11 = new SunPKCS11();
-    //public static PKCS11 p11 = new PKCS11();
-
     public static void main( String[] args ) throws IOException, GeneralSecurityException {
     
-    	File file = new File(DEST);
+    	String currentDirectory = System.getProperty("user.dir");
+    	String SRC = currentDirectory + "\\pdf\\mydoc.pdf";
+    	String DEST = currentDirectory + "\\pdf\\";
     	
+    	File file = new File(DEST);   	
     	file.mkdirs();
-
-//        Properties properties = new Properties();
-//        properties.load(new FileInputStream(PROPS));
-        
-        char[] pass = "12345678".toCharArray();
-    	//char[] pass = "roshanjha123".toCharArray();   //Proxkey
+    	
+    	System.out.println("Enter the token password: ");
+    	Scanner sc = new Scanner(System.in);
+    	String in = sc.next();
+    	
+        char[] pass = in.toCharArray();
 
         // Specify the correct path to the CRYPTOKI (PKCS#11) DLL.
         //String dllPath = "E:/user_data/workspace/usb/trustoken/trustokenP11Lib.dll";  //Trustoken
@@ -80,13 +69,8 @@ public class App
         //String dllPath = "C:/Windows/System32/SignatureP11.dll";     //Prox Key
         //String dllPath = "C:/Windows/System32/Watchdata/PROXKey CSP India V2.0/WDPKCS.dll";
         
-        //int in = p11.initializeLibrary(dllPath);
-        //System.out.println(in);
-        
         CK_C_INITIALIZE_ARGS initArgs = new CK_C_INITIALIZE_ARGS();
         initArgs.flags = 0;
-        String functionList = "C_GetFunctionList";
-        
         
         long[] slots = getSlotsWithTokens(dllPath);
         
@@ -103,12 +87,11 @@ public class App
         	BouncyCastleProvider providerBC = new BouncyCastleProvider();
             Security.addProvider(providerBC);
             
-            CallbackHandlerProtection chp = new CallbackHandlerProtection(new MyGuiCallbackHandler() {});
+            //CallbackHandlerProtection chp = new CallbackHandlerProtection(new MyGuiCallbackHandler() {});
             //Builder builder = Builder.newInstance("PKCS11", null, chp);
             //KeyStore keyStore = builder.getKeyStore();
             
             KeyStore ks = KeyStore.getInstance("PKCS11");
-            //KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(null, pass);
             String alias = ks.aliases().nextElement();
             PrivateKey pk = (PrivateKey) ks.getKey(alias, null);
@@ -174,31 +157,8 @@ public class App
     
     // Method returns a list of token slot's indexes
     public static long[] getSlotsWithTokens(String libraryPath) {
+    	
     	CK_C_INITIALIZE_ARGS initArgs = new CK_C_INITIALIZE_ARGS();
-    	/*
-    	PKCS11 P11 = new PKCS11();
-    	PKCS11 tmpPKCS11 = null;
-    	initArgs.flags = 0;
-    	
-    	String functionList = "C_GetFunctionList";
-    	
-    	try {
-            try {
-                P11.getInstance(libraryPath, functionList, initArgs, false);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-                return null;
-            }
-        } catch (Exception e) {
-            try {
-                initArgs = null;
-                tmpPKCS11 = PKCS11.getInstance(libraryPath, functionList, initArgs, true);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                return null;
-            }
-        }
-    	*/
   
     	String functionList = "C_GetFunctionList";
     	
@@ -206,7 +166,6 @@ public class App
         PKCS11 tmpPKCS11 = null;
         long[] slotList = null;
         
-       // PKCS11 P11 = new PKCS11();
         try {
             try {
                 tmpPKCS11 = PKCS11.getInstance(libraryPath, functionList, initArgs, false);
@@ -235,7 +194,6 @@ public class App
             }
         } catch (Throwable ex) {
             ex.printStackTrace();
-            //return null;
         }
 
         return slotList;
